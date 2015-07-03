@@ -261,29 +261,29 @@ def RGBcheck(im, blobs, color):
     if color == 'red':
         for i in range(0,a):
             RGBs = im[blobs[i,0],blobs[i,1],:]
-            if RGBs[2] > RGBs[1]:
+            if RGBs[1] > RGBs[0]:
                 deletionarray.append(i)
-            elif RGBs[3] > RGBs[1]:
+            elif RGBs[2] > RGBs[0]:
                 deletionarray.append(i)
-            elif RGBs[1] < Rthresh1:
+            elif RGBs[0] < Rthresh1:
                 deletionarray.append(i)
         
         blobs = np.delete(blobs,deletionarray,1)
         deletionarray = []
         a =  np.size(blobs,0)
         for i in range(0,a):
-            if blobs:
+            if blobs.any:
                 areal = sections_area(blobs[i,:],im,1)
-                if np.mean(areal[:,:,1,i]) < Rthresh1:
+                if np.mean(areal[:,:,0,i]) < Rthresh1:
                     deletionarray.append(i)
 
         blobs = np.delete(blobs,deletionarray,1)
         deletionarray = []
         a =  np.size(blobs,0)
         for i in range(0,a):
-            if blobs:
+            if blobs.any:
                 areal = sections_area(blobs[i,:],im,1)
-                RedVect = areal[:,:,1,i]
+                RedVect = areal[:,:,0,i]
                 if np.std( RedVect.astype(np.float64, copy=False) ) > Rthresh2:
                     deletionarray.append(i)
 
@@ -296,15 +296,15 @@ def RGBcheck(im, blobs, color):
     elif color == 'green':
         for i in range(0,a):
             RGBs = im[blobs[i,0],blobs[i,1],:]
-            if RGBs[1] > RGBs[2] or RGBs[3] > Gthresh1*RGBs[2] or RGBs[1] < Gthresh2*RGBs[2]:
+            if RGBs[0] > RGBs[1] or RGBs[2] > Gthresh1*RGBs[1] or RGBs[0] < Gthresh2*RGBs[1]:
                 deletionarray.append(i)
             
             
         a =  np.size(blobs,0)
         for i in range(0,a):
-            if blobs:
+            if blobs.any:
                 areal = sections_area(blobs[i,:],im,1)
-                if np.mean(areal[:,:,2,i]) < Gthresh3:
+                if np.mean(areal[:,:,1,i]) < Gthresh3:
                     deletionarray.append(i)
 
         blobs = np.delete(blobs,deletionarray,1)        
@@ -316,25 +316,25 @@ def RGBcheck(im, blobs, color):
         for i in range(0,a):
             deleted = 0;
             RGBs = im[blobs[i,0],blobs[i,1],:]
-            if RGBs[2] > RGBs[3] or RGBs[1] > RGBs[3]:
+            if RGBs[1] > RGBs[2] or RGBs[0] > RGBs[2]:
                 deletionarray.append(i)
                 deleted = 1
 
             if deleted != 1:
-                if RGBs[3] < Bthresh1*np.mean(im[:,:,3]):
+                if RGBs[2] < Bthresh1*np.mean(im[:,:,2]):
                     deletionarray.append(i)
                     deleted = 1
 
             if deleted != 1:
-                if RGBs[3] < sum(RGBs[1:2]):
+                if RGBs[2] < sum(RGBs[0:1]):
                     deletionarray.append(i)
                     deleted = 1
 
         a =  np.size(blobs,0)
         for i in range(0,a):
-            if blobs:
+            if blobs.any:
                 areal = sections_area(blobs[i,:],im,1)
-                if np.mean(areal[:,:,3,i]) < Bthresh2:
+                if np.mean(areal[:,:,2,i]) < Bthresh2:
                     deletionarray.append(i)
                     
         blobs = np.delete(blobs,deletionarray,1)
@@ -358,7 +358,7 @@ def sections_area(blobs,im,sidelength):
     sections evaluated to fit image dimension without resulting in error.
     By William Sebastian Henning Benzon 2014
     """
-    rB = round(blobs);
+    rB = np.round(blobs)
 
     g = np.copy(im)
     a = np.size(rB,0)

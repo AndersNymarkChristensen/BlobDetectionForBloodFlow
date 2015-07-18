@@ -1,2 +1,2 @@
-STATUS: Not completely done, still a few errors to weed out.
-Expected finsh: Thursday the second of June
+STATUS: Should be working now
+To DO: Test across mltiple systems, last week of July. 

@@ -1,2 +1,7 @@
-STATUS: Should be working now
-To DO: Test across mltiple systems, last week of July. 
+Code from the article "A new self-made digital slide scanner and
+microscope for imaging and quantification of
+fluorescent microspheres" 
+by
+Anders Nymark Christensen
+
+Finds microspheres (or other small coloured blobs) in images.

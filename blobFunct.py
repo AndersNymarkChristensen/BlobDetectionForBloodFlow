@@ -70,7 +70,6 @@ def BlobFunct(im, plotopt):
     IM = IM.astype(np.float64, copy=False)
     
     mask, arealsize = areal_est(IM)
-    misc.imsave('mask.png', mask)
     
     for index in range(0,3):
         if index == 1:
@@ -422,8 +421,6 @@ def edgeLoG(im, thres, edgeSigma):
         
     if not thres:
         thres = np.absolute(LoG).mean() * 0.75
-
-    #misc.imsave('LoG.png',LoG)
 
     # Find zero-crossing
     zc1 = (np.diff(np.sign(LoG),1,0) == -2) & (np.abs(np.diff(LoG,1,0)) > thres )

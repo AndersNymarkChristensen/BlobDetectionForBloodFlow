@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from skimage import morphology
 from skimage.measure import regionprops
 
+from scipy import misc
+
 
 
 def BlobFunct(im, plotopt):
@@ -68,8 +70,9 @@ def BlobFunct(im, plotopt):
     IM = IM.astype(np.float64, copy=False)
     
     mask, arealsize = areal_est(IM)
+    misc.imsave('mask.png', mask)
     
-    for index in range(0,2):
+    for index in range(0,3):
         if index == 1:
             maxBlobSize = 150
         else:
@@ -83,11 +86,13 @@ def BlobFunct(im, plotopt):
         # image.
         BW2 = scipy.ndimage.morphology.binary_fill_holes(BW) - BW
         
+        
         # We remove areas smaller and larger than what we have specified
         IMsmall = morphology.remove_small_objects(BW2, min_size=minBlobSize, connectivity=8)
         IMbig = morphology.remove_small_objects(BW2, min_size=maxBlobSize, connectivity=8)
         IMblobs = (IMsmall - IMbig) > 0
         IMtemp, num = scipy.ndimage.label(IMblobs)
+            
         
         # Label the remaining areas, if below the channel threshold they are
         # removed
@@ -123,21 +128,21 @@ def BlobFunct(im, plotopt):
         xy1 = np.round(allProps)
         
         deletionList = []
-        for i in range(0,np.size(xy1,1)):
-            if mask[xy1[i,1],xy1[i,0]]==0:
+        for i in range(0,np.size(xy1,0)):
+            if mask[xy1[i,0],xy1[i,1]]==0:
                 deletionList.append(i)
 
 
-        xy1 = np.delete(xy1,deletionList,1)
+        xy1 = np.delete(xy1,deletionList,0)
         ## Blob-check
         if index == 0:
-            red = xy1
+            red = np.copy(xy1)
             red = RGBcheck(im,red,'red')
         elif index ==1:
-            green = xy1
+            green = np.copy(xy1)
             green = RGBcheck(im,green,'green')
         elif index ==2:
-            blue = xy1
+            blue = np.copy(xy1)
             blue = RGBcheck(im,blue,'blue')
   
     
@@ -145,12 +150,13 @@ def BlobFunct(im, plotopt):
     amount = [len(red), len(green), len(blue)]
     
     if plotopt==1:
+        plt.figure
         plt.imshow(im)
-        plt.plot(red[:,1],red[:,2])
-        plt.plot(green[:,1],green[:,2])
-        plt.plot(blue[:,1],blue[:,2])
+        plt.plot(red[:,1],red[:,0],'rx')
+        plt.plot(green[:,1],green[:,0],'gx')
+        plt.plot(blue[:,1],blue[:,0],'bx')
+        plt.show()
         print('Plotting...')
-    
     
     return(amount,mask,arealsize,red,green,blue)
     
@@ -196,10 +202,10 @@ def areal_est(im):
             largestIndex = index
     
     # Isolating primary label for binary image
-    BW = L == largestIndex
+    BW = (L == largestIndex)
     # Securing tissue-value = 1
-    if BW[1,1] == 1:
-        BW != BW
+    if BW[0,0] == True:
+        BW = ~BW
         
     arealsize = largest;
     
@@ -268,26 +274,26 @@ def RGBcheck(im, blobs, color):
             elif RGBs[0] < Rthresh1:
                 deletionarray.append(i)
         
-        blobs = np.delete(blobs,deletionarray,1)
+        blobs = np.delete(blobs,deletionarray,0)
         deletionarray = []
         a =  np.size(blobs,0)
         for i in range(0,a):
             if blobs.any:
-                areal = sections_area(blobs[i,:],im,1)
-                if np.mean(areal[:,:,0,i]) < Rthresh1:
+                areal = sections_area(blobs[i,:],im,1)                
+                if np.mean(areal[:,:,0]) < Rthresh1:
                     deletionarray.append(i)
 
-        blobs = np.delete(blobs,deletionarray,1)
+        blobs = np.delete(blobs,deletionarray,0)
         deletionarray = []
         a =  np.size(blobs,0)
         for i in range(0,a):
             if blobs.any:
                 areal = sections_area(blobs[i,:],im,1)
-                RedVect = areal[:,:,0,i]
+                RedVect = areal[:,:,0]
                 if np.std( RedVect.astype(np.float64, copy=False) ) > Rthresh2:
                     deletionarray.append(i)
 
-        blobs = np.delete(blobs,deletionarray,1)
+        blobs = np.delete(blobs,deletionarray,0)
         
         
         # GREEN
@@ -297,17 +303,17 @@ def RGBcheck(im, blobs, color):
         for i in range(0,a):
             RGBs = im[blobs[i,0],blobs[i,1],:]
             if RGBs[0] > RGBs[1] or RGBs[2] > Gthresh1*RGBs[1] or RGBs[0] < Gthresh2*RGBs[1]:
-                deletionarray.append(i)
+                deletionarray.append(i) 
             
             
         a =  np.size(blobs,0)
         for i in range(0,a):
             if blobs.any:
                 areal = sections_area(blobs[i,:],im,1)
-                if np.mean(areal[:,:,1,i]) < Gthresh3:
+                if np.mean(areal[:,:,1]) < Gthresh3:
                     deletionarray.append(i)
 
-        blobs = np.delete(blobs,deletionarray,1)        
+        blobs = np.delete(blobs,deletionarray,0)        
         # BLUE
         # If red is more intense OR green is more intense
         # If blue is less than 2 times the average blue
@@ -334,10 +340,10 @@ def RGBcheck(im, blobs, color):
         for i in range(0,a):
             if blobs.any:
                 areal = sections_area(blobs[i,:],im,1)
-                if np.mean(areal[:,:,2,i]) < Bthresh2:
+                if np.mean(areal[:,:,2]) < Bthresh2:
                     deletionarray.append(i)
                     
-        blobs = np.delete(blobs,deletionarray,1)
+        blobs = np.delete(blobs,deletionarray,0)
 
     
     return(blobs)
@@ -361,34 +367,34 @@ def sections_area(blobs,im,sidelength):
     rB = np.round(blobs)
 
     g = np.copy(im)
-    a = np.size(rB,0)
+#    a = np.size(rB,0)
     x = np.size(g,0)
-    y = np.size(g,0)
+    y = np.size(g,1)
 
-    for i in range(0,a):
-        if rB[i,1]-sidelength < 1:
-            if rB[i,0]-sidelength < 1:
-                section = g[1:rB[i,1]+sidelength,1:rB[i,0]+sidelength,:]
-            elif rB[i,0]+sidelength > y:
-                section = g[1:rB[i,1]+sidelength,rB[i,0]-sidelength:y,:]
-            else:
-                section = g[1:rB[i,1]+sidelength,rB[i,0]-sidelength:rB[i,0]+sidelength,:]
-                    
-        elif rB[i,1]+sidelength > x:
-            if rB[i,0]-sidelength < 1:
-                section = g[rB[i,1]-sidelength:x,1:rB[i,0]+sidelength,:]
-            elif rB[i,0]+sidelength > y:
-                section = g[rB[i,1]-sidelength:x,rB[i,0]-sidelength:y,:]
-            else:
-                section = g[rB[i,1]-sidelength:x,rB[i,0]-sidelength:rB[i,0]+sidelength,:]
-                  
-        elif rB[i,0]-sidelength < 1:
-            section = g[rB[i,1]-sidelength:rB[i,1]+sidelength,1:rB[i,0]+sidelength,:]
-        elif rB[i,0]+sidelength > y:
-            section = g[rB[i,1]-sidelength:rB[i,1]+sidelength,rB[i,0]-sidelength:y,:]
+#    for i in range(0,1):
+    if rB[1]-sidelength < 1:
+        if rB[0]-sidelength < 1:
+            section = g[1:rB[1]+sidelength,1:rB[0]+sidelength,:]
+        elif rB[0]+sidelength > y:
+            section = g[1:rB[1]+sidelength,rB[0]-sidelength:y,:]
         else:
-            # Not border coordinates
-            section = g[rB[i,1]-sidelength:rB[i,1]+sidelength,rB[i,0]-sidelength:rB[i,0]+sidelength,:]
+            section = g[1:rB[1]+sidelength,rB[0]-sidelength:rB[0]+sidelength,:]
+                
+    elif rB[1]+sidelength > x:
+        if rB[0]-sidelength < 1:
+            section = g[rB[1]-sidelength:x,1:rB[0]+sidelength,:]
+        elif rB[0]+sidelength > y:
+            section = g[rB[1]-sidelength:x,rB[0]-sidelength:y,:]
+        else:
+            section = g[rB[1]-sidelength:x,rB[0]-sidelength:rB[0]+sidelength,:]
+              
+    elif rB[0]-sidelength < 1:
+        section = g[rB[1]-sidelength:rB[1]+sidelength,1:rB[0]+sidelength,:]
+    elif rB[0]+sidelength > y:
+        section = g[rB[1]-sidelength:rB[1]+sidelength,rB[0]-sidelength:y,:]
+    else:
+        # Not border coordinates
+        section = g[rB[1]-sidelength:rB[1]+sidelength,rB[0]-sidelength:rB[0]+sidelength,:]
 
     
     
@@ -416,6 +422,8 @@ def edgeLoG(im, thres, edgeSigma):
         
     if not thres:
         thres = np.absolute(LoG).mean() * 0.75
+
+    #misc.imsave('LoG.png',LoG)
 
     # Find zero-crossing
     zc1 = (np.diff(np.sign(LoG),1,0) == -2) & (np.abs(np.diff(LoG,1,0)) > thres )
